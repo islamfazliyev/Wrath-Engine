@@ -131,16 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="drawMeshTextures.hpp" />
-    <ClCompile Include="imgui.cpp" />
-    <ClCompile Include="imgui_demo.cpp" />
-    <ClCompile Include="imgui_draw.cpp" />
-    <ClCompile Include="imgui_tables.cpp" />
-    <ClCompile Include="imgui_widgets.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="rlImGui.cpp" />
-  </ItemGroup>
-  <ItemGroup>
+    <None Include="imgui.ini" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -155,6 +146,18 @@
     <ClInclude Include="dependencies\imstb_truetype.h" />
     <ClInclude Include="dependencies\rlImGui.h" />
     <ClInclude Include="dependencies\rlImGuiColors.h" />
+    <ClInclude Include="Engine\DrawSys\drawMeshTextures.hpp" />
+    <ClInclude Include="Engine\Properties\prop.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Engine\main.cpp" />
+    <ClCompile Include="Engine\UI\menuBar.hpp" />
+    <ClCompile Include="vendors\imgui\imgui.cpp" />
+    <ClCompile Include="vendors\imgui\imgui_demo.cpp" />
+    <ClCompile Include="vendors\imgui\imgui_draw.cpp" />
+    <ClCompile Include="vendors\imgui\imgui_tables.cpp" />
+    <ClCompile Include="vendors\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="vendors\rlimgui\rlImGui.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

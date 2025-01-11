@@ -4,56 +4,12 @@
 #include <imgui.h>
 #include <rlImgui.h>
 #include <rlgl.h>
-#include "drawMeshTextures.hpp"
+#include "DrawSys/drawMeshTextures.hpp"
+#include "UI/menuBar.hpp"
 #include <iostream>
 #include <algorithm>
 #include <string>
-
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
-const int GRID_COLS = 20;      // Number of grid columns
-const int GRID_ROWS = 15;      // Number of grid rows
-const float GRID_SPACING = 1.0f;  // Spacing between grid lines
-
-namespace CameraSettings {
-    enum Mode {
-        EDITOR_VIEW,
-        PREVIEW
-    };
-}
-
-enum class Layer
-{
-    FLOOR,
-    WALL,
-    CEILING,
-    DECORATION
-};
-
-struct placedCube
-{
-    Vector3 position;
-    Layer layer;
-    Color color;
-    Texture texture;
-};
-
-Color GetColorForLayer(Layer layer)
-{
-    switch (layer)
-    {
-    case Layer::FLOOR:
-        return GRAY;
-    case Layer::WALL:
-        return DARKGRAY;
-    case Layer::CEILING:
-        return WHITE;
-    case Layer::DECORATION:
-        return GREEN;
-    default:
-        return BLUE;
-    }
-}
+#include "Properties/prop.hpp"
 
 Camera3D SetupCamera(CameraSettings::Mode mode)
 {
@@ -78,27 +34,17 @@ Camera3D SetupCamera(CameraSettings::Mode mode)
     return camera;
 }
 
-float color[4];
-Layer currentLayer = Layer::FLOOR;
+//float color[4];
+//Layer currentLayer = Layer::FLOOR;
 
 int main() {
 
     // Initialize window
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Cube Placement with Preview");
     SetTargetFPS(60);
-    bool showEditorWindow = true;
-    bool showPreviewWindow = false;
-    bool showCubeProperties = false;
-    bool showStats = false;
-    bool showLayers = false;
+    UI MenuBar;
     
     
-    Color cubeColor = {
-          (unsigned char)(color[0] * 255),
-          (unsigned char)(color[1] * 255),
-          (unsigned char)(color[2] * 255),
-          (unsigned char)(color[3] * 255)
-    };
 
     // Store placed cubes
     std::vector<placedCube> placedCubes;
@@ -108,20 +54,20 @@ int main() {
     mesh meshes;
     // UI state flags
     
-    Camera3D camera = SetupCamera(CameraSettings::EDITOR_VIEW);
+    Camera3D camera = SetupCamera(CameraSettings::PREVIEW);
     CameraSettings::Mode currentMode = CameraSettings::EDITOR_VIEW;
-    Texture currentTexture;
-    std::string currentTexturePath{""};
+    /*Texture currentTexture;
+    std::string currentTexturePath{""};*/
     // Initialize RlImGui
     rlImGuiSetup(true);
-    int layer = 0;
+    
     while (!WindowShouldClose()) {
-        if (showEditorWindow && !showPreviewWindow)
+        if (MenuBar.EditorWindow && !MenuBar.PreviewWindow)
         {
             currentMode = CameraSettings::EDITOR_VIEW;
             camera = SetupCamera(CameraSettings::EDITOR_VIEW);
         }
-        if (!showEditorWindow && showPreviewWindow)
+        if (!MenuBar.EditorWindow && MenuBar.PreviewWindow)
         {
             currentMode = CameraSettings::PREVIEW;
             camera = SetupCamera(CameraSettings::PREVIEW);
@@ -131,7 +77,7 @@ int main() {
             UpdateCamera(&camera, CAMERA_FREE);
         }
 
-        switch (currentLayer)
+        switch (MenuBar.editorSettings.currentLayer)
         {
         case Layer::FLOOR:
             previewCubePosition.y = 0;
@@ -177,14 +123,14 @@ int main() {
                 // Place cube if position is not occupied
                 if (!positionOccupied) {
                     Color cubeColor = {
-                    (unsigned char)(color[0] * 255),
-                        (unsigned char)(color[1] * 255),
-                        (unsigned char)(color[2] * 255),
-                        (unsigned char)(color[3] * 255)
+                    (unsigned char)(MenuBar.editorSettings.color[0] * 255),
+                        (unsigned char)(MenuBar.editorSettings.color[1] * 255),
+                        (unsigned char)(MenuBar.editorSettings.color[2] * 255),
+                        (unsigned char)(MenuBar.editorSettings.color[3] * 255)
                     };
                     
                     //Texture cubeTexture = currentTexture;
-                    placedCubes.push_back({ previewCubePosition,currentLayer,cubeColor, currentTexture});
+                    placedCubes.push_back({ previewCubePosition,MenuBar.editorSettings.currentLayer,cubeColor, MenuBar.editorSettings.currentTexture});
                 }
             }
 
@@ -229,101 +175,9 @@ int main() {
 
         // ImGui Rendering
         rlImGuiBegin();
-        if (showCubeProperties)
-        {
-            //rlImGuiBegin();
-            cubeColor = {
-                (unsigned char)(color[0] * 255),
-                    (unsigned char)(color[1] * 255),
-                    (unsigned char)(color[2] * 255),
-                    (unsigned char)(color[3] * 255)
-            };
-            static char buffer[256] = "";
-            ImGui::Begin("Cube Properties", NULL);
-            ImGui::BeginChild("Color");
-            ImGui::ColorPicker4("color", color);
-            ImGui::EndChild();
-            ImGui::BeginChild("Texture");
-            ImGui::InputText("Texture Path", buffer, sizeof(buffer));
-            if (ImGui::Button("Apply"))
-            {
-                currentTexturePath = std::string(buffer);
-                currentTexture = LoadTexture(buffer);
-            }
-            
-            ImGui::EndChild();
-            ImGui::End();
-            //rlImGuiEnd();
-        }
-        if (showLayers)
-        {
-            ImGui::Begin("Layers");
-            ImGui::SliderInt("Layer", &layer, 0, 4);
-            switch (layer)
-            {
-            case 0:
-                currentLayer = Layer::FLOOR;
-                break;
-
-            case 1:
-                currentLayer = Layer::WALL;
-                break;
-
-            case 2:
-                currentLayer = Layer::CEILING;
-                break;
-
-            case 3:
-                currentLayer = Layer::DECORATION;
-                break;
-            }
-            ImGui::End();
-        }
-        // Main Menu Bar
-        if (ImGui::BeginMainMenuBar())
-        {
-            if (ImGui::BeginMenu("View"))
-            {
-                if (ImGui::MenuItem("Editor Window", NULL, &showEditorWindow))
-                {
-                    showPreviewWindow = false;
-                    showEditorWindow = true;
-                }
-                if (ImGui::MenuItem("Preview Window", NULL, &showPreviewWindow))
-                {
-                    showPreviewWindow = true;
-                    showEditorWindow = false;
-                }
-                ImGui::EndMenu();
-            }
-
-            if (ImGui::BeginMenu("Edit"))
-            {
-                if (ImGui::MenuItem("Clear All Cubes"))
-                {
-                    placedCubes.clear(); // Clear all cubes
-                }
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("Windows"))
-            {
-                if (ImGui::MenuItem("Cube Properties", NULL, &showCubeProperties))
-                {
-                    showCubeProperties = true;
-                }
-                if (ImGui::MenuItem("Stats"))
-                {
-                    showStats = true;
-                }
-                if (ImGui::MenuItem("Layer", NULL, &showLayers))
-                {
-                    showLayers = true;
-                }
-                ImGui::EndMenu();
-
-            }
-            ImGui::EndMainMenuBar();
-        }
+        
+        MenuBar.BeginMenu();
+        MenuBar.BeginWindows();
         rlImGuiEnd();
         EndDrawing();
     }
