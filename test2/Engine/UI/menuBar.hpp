@@ -1,7 +1,9 @@
+#pragma once
 #include <imgui.h>
-//#include "Header/UI.hpp"
 #include "../Properties/prop.hpp"
 #include "string"
+#include <raylib.h>
+#include <iostream>
 
 //Show show;
 
@@ -16,6 +18,8 @@ public:
     bool States = false;
     bool Layers = false;
     EditorSettings editorSettings;
+    int layerInt = 0;
+
 
 	void BeginMenu()
 	{
@@ -67,6 +71,10 @@ public:
 
     void BeginWindows()
     {
+        /*if (editorSettings.color[3] < 0)
+        {
+            editorSettings.color[3] = 255;
+        }*/
         if (CubeProperties)
         {
             //rlImGuiBegin();
@@ -83,6 +91,7 @@ public:
             ImGui::EndChild();
             ImGui::BeginChild("Texture");
             ImGui::InputText("Texture Path", buffer, sizeof(buffer));
+            
             if (ImGui::Button("Apply"))
             {
                 editorSettings.currentTexturePath = std::string(buffer);
@@ -95,9 +104,8 @@ public:
         }
         if (Layers)
         {
-            int layerInt = 0;
             ImGui::Begin("Layers");
-            ImGui::SliderInt("Layer", &layerInt, 0, 4);
+            ImGui::SliderInt("Layer", &layerInt, 0, 3);
             switch (layerInt)
             {
             case 0:

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <string>
 #include "Properties/prop.hpp"
+#include "TileEditor/tile.hpp"
 
 Camera3D SetupCamera(CameraSettings::Mode mode)
 {
@@ -43,22 +44,13 @@ int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Cube Placement with Preview");
     SetTargetFPS(60);
     UI MenuBar;
+    TileDraw tileDraw(MenuBar);
     
     
-
-    // Store placed cubes
-    std::vector<placedCube> placedCubes;
-
-    // Preview cube position
-    Vector3 previewCubePosition = { 0.0f, 0.0f, 0.0f };
-    mesh meshes;
-    // UI state flags
     
     Camera3D camera = SetupCamera(CameraSettings::PREVIEW);
     CameraSettings::Mode currentMode = CameraSettings::EDITOR_VIEW;
-    /*Texture currentTexture;
-    std::string currentTexturePath{""};*/
-    // Initialize RlImGui
+    
     rlImGuiSetup(true);
     
     while (!WindowShouldClose()) {
@@ -77,19 +69,19 @@ int main() {
             UpdateCamera(&camera, CAMERA_FREE);
         }
 
-        switch (MenuBar.editorSettings.currentLayer)
+        switch ((int)MenuBar.editorSettings.currentLayer)
         {
-        case Layer::FLOOR:
-            previewCubePosition.y = 0;
+        case 0:
+            tileDraw.previewCubePosition.y = 0;
             break;
-        case Layer::WALL:
-            previewCubePosition.y = 1;
+        case 1:
+            tileDraw.previewCubePosition.y = 1;
             break;
-        case Layer::CEILING:
-            previewCubePosition.y = 2;
+        case 2:
+            tileDraw.previewCubePosition.y = 2;
             break;
-        case Layer::DECORATION:
-            previewCubePosition.y = 0;
+        case 3:
+            tileDraw.previewCubePosition.y = 0;
             break;
         default:
             break;
@@ -104,48 +96,11 @@ int main() {
         {
 
             // Update preview cube position based on grid
-            previewCubePosition.x = gridX - (GRID_COLS / 2);
-            previewCubePosition.z = gridY - (GRID_ROWS / 2);
-        }
-        if (!ImGui::GetIO().WantCaptureMouse)
-        {
-            // Check for left mouse button click to place cube
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                // Check if this position is not already occupied
-                bool positionOccupied = false;
-                for (const auto& cube : placedCubes) {
-                    if (cube.position.x == previewCubePosition.x && cube.position.z == previewCubePosition.z && cube.position.y == previewCubePosition.y) {
-                        positionOccupied = true;
-                        break;
-                    }
-                }
-
-                // Place cube if position is not occupied
-                if (!positionOccupied) {
-                    Color cubeColor = {
-                    (unsigned char)(MenuBar.editorSettings.color[0] * 255),
-                        (unsigned char)(MenuBar.editorSettings.color[1] * 255),
-                        (unsigned char)(MenuBar.editorSettings.color[2] * 255),
-                        (unsigned char)(MenuBar.editorSettings.color[3] * 255)
-                    };
-                    
-                    //Texture cubeTexture = currentTexture;
-                    placedCubes.push_back({ previewCubePosition,MenuBar.editorSettings.currentLayer,cubeColor, MenuBar.editorSettings.currentTexture});
-                }
-            }
-
-            // Check for right mouse button to remove cubes
-            if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-
-                auto it = std::remove_if(placedCubes.begin(), placedCubes.end(),
-                    [&previewCubePosition](const placedCube& cube) {
-                        return cube.position.x == previewCubePosition.x && cube.position.z == previewCubePosition.z && cube.position.y == previewCubePosition.y;
-                    }
-                );
-                placedCubes.erase(it, placedCubes.end());
-            }
+            tileDraw.previewCubePosition.x = gridX - (GRID_COLS / 2);
+            tileDraw.previewCubePosition.z = gridY - (GRID_ROWS / 2);
         }
         
+        tileDraw.Update();
 
         // Begin 3D drawing
         BeginDrawing();
@@ -157,12 +112,12 @@ int main() {
         DrawGrid(GRID_COLS, GRID_SPACING);
 
         // Draw preview wireframe cube
-        DrawCubeWires(previewCubePosition, 1.2f, 1.2f, 1.2f, GREEN);
+        DrawCubeWires(tileDraw.previewCubePosition, 1.2f, 1.2f, 1.2f, GREEN);
 
         // Draw placed cubes
-        for (const auto& cube : placedCubes)
+        for (const auto& cube : tileDraw.placedCubes)
         {
-            meshes.DrawCubeTextureRec(cube.texture, Rectangle{0,float(cube.texture.height),float(cube.texture.width), float(cube.texture.height)}, cube.position, 1, 1, 1, cube.color);
+            tileDraw.meshes.DrawCubeTextureRec(cube.texture, Rectangle{0,float(cube.texture.height),float(cube.texture.width), float(cube.texture.height)}, cube.position, 1, 1, 1, cube.color);
             DrawCubeWires(cube.position, 1.0f, 1.0f, 1.0f, DARKBLUE);
         }
 
